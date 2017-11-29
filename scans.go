@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/url"
 )
 
@@ -67,8 +69,8 @@ func (n *Nessus) ListScans() (*Scans, error) {
 }
 
 //ExportScan file number
-func (n *Nessus) ExportScan(scanID, format string) (int, error) {
-	uri := fmt.Sprintf("scans/%s/export", scanID)
+func (n *Nessus) ExportScan(scanID int, format string) (int, error) {
+	uri := fmt.Sprintf("scans/%d/export", scanID)
 	values := url.Values{}
 	values.Set("format", format)
 	resp, err := n.post(uri, values)
@@ -84,8 +86,8 @@ func (n *Nessus) ExportScan(scanID, format string) (int, error) {
 }
 
 //DownloadScan data
-func (n *Nessus) DownloadScan(scanID, fileID string) (string, error) {
-	uri := fmt.Sprintf("scans/%s/export/%s/download", scanID, fileID)
+func (n *Nessus) DownloadScan(scanID, fileID int) (string, error) {
+	uri := fmt.Sprintf("scans/%d/export/%d/download", scanID, fileID)
 	resp, err := n.get(uri)
 	if err != nil {
 		return "", err
@@ -99,8 +101,8 @@ func (n *Nessus) DownloadScan(scanID, fileID string) (string, error) {
 }
 
 //ExportStatus of scan
-func (n *Nessus) ExportStatus(scanID, fileID string) (string, error) {
-	uri := fmt.Sprintf("scans/%s/export/%s/status", scanID, fileID)
+func (n *Nessus) ExportStatus(scanID, fileID int) (string, error) {
+	uri := fmt.Sprintf("scans/%d/export/%d/status", scanID, fileID)
 	resp, err := n.get(uri)
 	if err != nil {
 		return "", err
@@ -146,12 +148,12 @@ type ScanResponse struct {
 //CreateScan for Nessus
 func (n *Nessus) CreateScan(scanData *Scan) (*ScanResponse, error) {
 	values, _ := json.Marshal(scanData)
-	resp, err := n.postJSON("scans", values)
+	resp, err := n.sendJSON("scans", values, "POST")
 	if err != nil {
 		return nil, err
 	}
 	s := &ScanResponse{}
-	err = json.NewDecoder(resp).Decode(s)
+	err = json.NewDecoder(resp.Body).Decode(s)
 	if err != nil {
 		return nil, err
 	}
@@ -159,8 +161,8 @@ func (n *Nessus) CreateScan(scanData *Scan) (*ScanResponse, error) {
 }
 
 //LaunchScan for Nessus
-func (n *Nessus) LaunchScan(scanID string) (string, error) {
-	uri := fmt.Sprintf("scans/%s/launch", scanID)
+func (n *Nessus) LaunchScan(scanID int) (string, error) {
+	uri := fmt.Sprintf("scans/%d/launch", scanID)
 	resp, err := n.post(uri, nil)
 	if err != nil {
 		return "", err
@@ -174,4 +176,30 @@ func (n *Nessus) LaunchScan(scanID string) (string, error) {
 		return "", err
 	}
 	return r.ScanUUID, nil
+}
+
+//ScanStatus for Nessus
+func (n *Nessus) ScanStatus(scanID int) (string, error) {
+	uri := fmt.Sprintf("scans/%d", scanID)
+	resp, err := n.get(uri)
+	if err != nil {
+		return "", err
+	}
+	/*
+		type response struct {
+			Status string `json:"info"`
+		}
+		r := &response{}
+		err = json.NewDecoder(resp).Decode(r)
+		if err != nil {
+			return "", err
+		}
+	*/
+	rdata, err := ioutil.ReadAll(resp)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(string(rdata))
+	//return r.Status, nil
+	return "", nil
 }

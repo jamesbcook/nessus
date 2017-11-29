@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 func (n *Nessus) get(path string) (io.ReadCloser, error) {
@@ -54,7 +55,7 @@ func (n *Nessus) post(path string, values url.Values) (io.ReadCloser, error) {
 
 }
 
-func (n *Nessus) postJSON(path string, values []byte) (io.ReadCloser, error) {
+func (n *Nessus) sendJSON(path string, values []byte, method string) (*http.Response, error) {
 	uri := fmt.Sprintf("%s/%s", n.Server, path)
 	client := &http.Client{}
 	if n.Insecure {
@@ -63,7 +64,7 @@ func (n *Nessus) postJSON(path string, values []byte) (io.ReadCloser, error) {
 		}
 		client = &http.Client{Transport: tr}
 	}
-	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(values))
+	req, err := http.NewRequest(strings.ToUpper(method), uri, bytes.NewBuffer(values))
 	if err != nil {
 		log.Println(err)
 	}
@@ -74,7 +75,7 @@ func (n *Nessus) postJSON(path string, values []byte) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
-	return resp.Body, nil
+	return resp, nil
 
 }
 
