@@ -39,7 +39,6 @@ func (n *Nessus) post(path string, values url.Values) (io.ReadCloser, error) {
 		}
 		client = &http.Client{Transport: tr}
 	}
-	//resp, err := client.PostForm(uri, values)
 	req, err := http.NewRequest("POST", uri, bytes.NewBufferString(values.Encode()))
 	if err != nil {
 		log.Println(err)

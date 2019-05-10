@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/url"
 )
 
@@ -86,18 +85,18 @@ func (n *Nessus) ExportScan(scanID int, format string) (int, error) {
 }
 
 //DownloadScan data
-func (n *Nessus) DownloadScan(scanID, fileID int) (string, error) {
+func (n *Nessus) DownloadScan(scanID, fileID int) ([]byte, error) {
 	uri := fmt.Sprintf("scans/%d/export/%d/download", scanID, fileID)
 	resp, err := n.get(uri)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	var b bytes.Buffer
 	_, err = b.ReadFrom(resp)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return b.String(), nil
+	return b.Bytes(), nil
 }
 
 //ExportStatus of scan
@@ -121,7 +120,7 @@ type ScanResponse struct {
 		CreationDate           int    `json:"creation_date"`
 		CustomTargets          string `json:"custom_targets"`
 		DefaultPermissions     int    `json:"default_permissions"`
-		description            string `json:"description"`
+		Description            string `json:"description"`
 		Emails                 string `json:"emails"`
 		ID                     int    `json:"id"`
 		LastModificationDate   int    `json:"last_modification_date"`
@@ -185,21 +184,9 @@ func (n *Nessus) ScanStatus(scanID int) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	/*
-		type response struct {
-			Status string `json:"info"`
-		}
-		r := &response{}
-		err = json.NewDecoder(resp).Decode(r)
-		if err != nil {
-			return "", err
-		}
-	*/
 	rdata, err := ioutil.ReadAll(resp)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
-	fmt.Println(string(rdata))
-	//return r.Status, nil
-	return "", nil
+	return string(rdata), nil
 }
